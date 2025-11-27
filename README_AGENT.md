@@ -1,93 +1,93 @@
-# Руководство для AI-Агента: Как использовать notebook_editor.py
+# AI Agent Guide: How to use notebook_editor.py
 
-Этот инструмент предназначен для безопасного и надежного редактирования файлов Jupyter Notebook (.ipynb).
-Он работает без внешних зависимостей и гарантирует сохранение структуры JSON.
+This tool is designed for safe and reliable editing of Jupyter Notebook (.ipynb) files.
+It operates without external dependencies and guarantees the preservation of the JSON structure.
 
-## Основной паттерн работы (Best Practice)
+## Core Workflow (Best Practice)
 
-Для внесения изменений в код всегда следуй этому алгоритму:
+To make changes to the code, always follow this algorithm:
 
-1. **Исследование**: Получи список ячеек, чтобы понять структуру.
+1. **Explore**: Get the list of cells to understand the structure.
     `python notebook_editor.py list <notebook.ipynb>`
 
-2. **Чтение**: Выгрузи содержимое нужной ячейки во временный файл.
+2. **Read**: Export the content of the desired cell to a temporary file.
     `python notebook_editor.py read <notebook.ipynb> <cell_index> --to-file <temp_file.py>`
 
-3. **Редактирование**: Прочитай `<temp_file.py>`, внеси изменения и сохрани их.
+3. **Edit**: Read `<temp_file.py>`, make changes, and save them.
 
-4. **Проверка (Diff)**: (Опционально) Посмотри, что изменится.
+4. **Verify (Diff)**: (Optional) See what will change.
     `python notebook_editor.py diff <notebook.ipynb> <cell_index> --from-file <temp_file.py>`
 
-5. **Применение**: Обнови ячейку из файла.
+5. **Apply**: Update the cell from the file.
     `python notebook_editor.py update <notebook.ipynb> <cell_index> --from-file <temp_file.py>`
 
-## Справочник команд
+## Command Reference
 
-### 1. Просмотр структуры (`list`)
+### 1. View Structure (`list`)
 
-Показывает индексы, типы ячеек и начало их содержимого.
+Shows indices, cell types, and the beginning of their content.
 
 ```bash
 python notebook_editor.py list my_notebook.ipynb --limit 50
 ```
 
-### 2. Чтение ячейки (`read`)
+### 2. Read Cell (`read`)
 
-* **В консоль** (для коротких ячеек):
+* **To Console** (for short cells):
 
     ```bash
     python notebook_editor.py read my_notebook.ipynb 5
     ```
 
-* **В файл** (РЕКОМЕНДУЕТСЯ для кода):
+* **To File** (RECOMMENDED for code):
 
     ```bash
     python notebook_editor.py read my_notebook.ipynb 5 --to-file cell_5.py
     ```
 
-### 3. Поиск (`search`)
+### 3. Search (`search`)
 
-Находит ячейки, содержащие текст или regex.
+Finds cells containing text or regex.
 
 ```bash
 python notebook_editor.py search my_notebook.ipynb "import pandas"
 python notebook_editor.py search my_notebook.ipynb "def .*_handler" --regex
 ```
 
-### 4. Обновление ячейки (`update`)
+### 4. Update Cell (`update`)
 
-Заменяет содержимое ячейки. Автоматически очищает output ячейки.
+Replaces the content of a cell. Automatically clears the cell output.
 
-* **Из файла** (Безопасно):
+* **From File** (Safe):
 
     ```bash
     python notebook_editor.py update my_notebook.ipynb 5 --from-file updated_code.py
     ```
 
-* **Текстом** (Только для одной строки):
+* **With Text** (Only for single lines):
 
     ```bash
     python notebook_editor.py update my_notebook.ipynb 5 --content "print('done')"
     ```
 
-### 5. Добавление ячейки (`add`)
+### 5. Add Cell (`add`)
 
-Вставляет новую ячейку перед указанным индексом (или в конец, если index=-1).
+Inserts a new cell before the specified index (or at the end if index=-1).
 
 ```bash
-python notebook_editor.py add my_notebook.ipynb --index 0 --type markdown --content "# Заголовок"
+python notebook_editor.py add my_notebook.ipynb --index 0 --type markdown --content "# Title"
 python notebook_editor.py add my_notebook.ipynb --type code --from-file new_script.py
 ```
 
-### 6. Удаление ячейки (`delete`)
+### 6. Delete Cell (`delete`)
 
 ```bash
 python notebook_editor.py delete my_notebook.ipynb 5
 ```
 
-### 7. Создание ноутбука (`create`)
+### 7. Create Notebook (`create`)
 
-Создает пустой валидный .ipynb файл.
+Creates an empty valid .ipynb file.
 
 ```bash
 python notebook_editor.py create new_notebook.ipynb

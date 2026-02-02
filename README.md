@@ -323,7 +323,31 @@ python3 notebook_editor.py save-output <notebook.ipynb> <index> --to-file <path>
 
 ---
 
-## 📋 Command Summary Table
+### 14. **export** - Export to Markdown or Python
+322: 
+323: Exports the entire notebook to a single Markdown (`.md`) or Python (`.py`) file, including all cell outputs and images.
+324: 
+325: - For `.py` files: Markdown cells and outputs are saved as `#` comments.
+326: - For `.md` files: Markdown cells and outputs are saved as `<!-- -->` comments.
+327: - **Images**: Automatically extracted and saved to a folder. If the folder exists, a `_copyN` suffix is added.
+328: 
+329: ```bash
+330: python3 notebook_editor.py export <notebook.ipynb> <output.md|.py> [--image-dir <dir>]
+331: ```
+332: 
+333: **Examples:**
+334: 
+335: ```bash
+336: # Export to python (runnable script with comments)
+337: python3 notebook_editor.py export analysis.ipynb script.py
+338: 
+339: # Export to markdown
+340: python3 notebook_editor.py export analysis.ipynb report.md
+341: ```
+338: 
+339: ---
+340: 
+341: ## 📋 Command Summary Table
 
 | Command | Description | Key Flags |
 |---------|-------------|-----------|
@@ -340,6 +364,7 @@ python3 notebook_editor.py save-output <notebook.ipynb> <index> --to-file <path>
 | `validate` | Check structure | - |
 | `create` | New notebook | - |
 | `save-output` | Extract images | `--output-index`, `--to-file` |
+| `export` | Export to Markdown | `--image-dir` |
 
 ---
 

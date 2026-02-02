@@ -230,3 +230,4 @@ Returns exit code 1 if validation fails.
 | `validate` | Check structure | - |
 | `create` | New notebook | - |
 | `save-output` | Extract images | `--output-index`, `--to-file` |
+| `export` | Export to Markdown/Python | `--image-dir` |

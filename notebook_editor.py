@@ -818,6 +818,146 @@ class NotebookEditor:
         
         return json.dumps(result, ensure_ascii=False, indent=2)
 
+    def export_full(self, output_path: str, image_dir_name: Optional[str] = None):
+        """
+        Экспортирует весь ноутбук. Если есть изображения — создает папку и кладет всё внутрь.
+        Если нет — создает одиночный файл.
+        """
+        output_file = Path(output_path)
+        base_name = output_file.stem
+        parent_dir = output_file.parent
+        
+        cells = self.data.get('cells', [])
+        
+        # 1. Сначала проверяем, есть ли вообще изображения
+        has_images = False
+        for cell in cells:
+            for output in cell.get('outputs', []):
+                if 'data' in output:
+                    for key in output['data']:
+                        if key.startswith('image/'):
+                            has_images = True
+                            break
+                if has_images: break
+            if has_images: break
+
+        # 2. Определяем финальные пути
+        if has_images:
+            # Создаем папку (используем имя файла или кастомное имя)
+            folder_base = image_dir_name if image_dir_name else base_name
+            target_dir = parent_dir / folder_base
+            
+            # Логика copyN
+            if target_dir.exists():
+                counter = 1
+                while True:
+                    target_dir = parent_dir / f"{folder_base}_copy{counter}"
+                    if not target_dir.exists():
+                        break
+                    counter += 1
+            
+            target_dir.mkdir(parents=True, exist_ok=True)
+            export_file_path = target_dir / output_file.name
+            img_dir = target_dir # Картинки кладем прямо в корень папки экспорта
+            print(f"Images detected. Creating export folder: {target_dir}")
+        else:
+            export_file_path = output_file
+            img_dir = None
+            if not parent_dir.exists():
+                parent_dir.mkdir(parents=True, exist_ok=True)
+
+        # 3. Определяем стиль комментариев
+        is_py = export_file_path.suffix.lower() == '.py'
+        c_start = "# " if is_py else "<!-- "
+        c_end = "" if is_py else " -->"
+        sep = f"\n{c_start}{'='*60}{c_end}\n"
+        
+        try:
+            with open(export_file_path, 'w', encoding='utf-8') as f:
+                f.write(f"{c_start}Exported from {self.filepath.name}{c_end}\n")
+                f.write(f"{c_start}Total cells: {len(cells)}{c_end}\n")
+                
+                for i, cell in enumerate(cells):
+                    cell_type = cell.get('cell_type', 'unknown')
+                    source = self._source_to_string(cell.get('source', []))
+                    
+                    f.write(sep)
+                    f.write(f"{c_start}CELL {i} ({cell_type}){c_end}\n")
+                    f.write(sep)
+                    
+                    if cell_type == 'markdown':
+                        if is_py:
+                            for line in source.splitlines():
+                                f.write(f"# {line}\n")
+                        else:
+                            f.write("<!--\n")
+                            f.write(source)
+                            f.write("\n-->\n")
+                        
+                    elif cell_type == 'code':
+                        f.write(f"# [ {i} ]\n")
+                        f.write(source)
+                        if not source.endswith('\n'): f.write('\n')
+                        
+                        outputs = cell.get('outputs', [])
+                        if outputs:
+                            f.write(f"\n{c_start}--- OUTPUT {i} ---{c_end}\n")
+                            
+                            for out_idx, output in enumerate(outputs):
+                                # Текст
+                                text_content = []
+                                if output.get('output_type') == 'stream':
+                                    text_content = self._normalize_source(output.get('text', []))
+                                elif 'data' in output and 'text/plain' in output['data']:
+                                    text_content = self._normalize_source(output['data']['text/plain'])
+                                elif output.get('output_type') == 'error':
+                                    text_content = [f"{output.get('ename')}: {output.get('evalue')}\n"]
+                                    text_content.extend(self._normalize_source(output.get('traceback', [])))
+
+                                if text_content:
+                                    if is_py:
+                                        for line in "".join(text_content).splitlines():
+                                            f.write(f"# {line}\n")
+                                    else:
+                                        f.write("<!--\n")
+                                        f.write("".join(text_content))
+                                        f.write("\n-->\n")
+
+                                # Картинки
+                                if 'data' in output:
+                                    for key, val in output['data'].items():
+                                        if key.startswith('image/'):
+                                            ext = key.split('/')[-1]
+                                            if ext == 'svg+xml': ext = 'svg'
+                                            
+                                            img_filename = f"cell_{i}_output_{out_idx}.{ext}"
+                                            img_path = img_dir / img_filename
+                                            
+                                            b64_data = "".join(val) if isinstance(val, list) else val
+                                            data = base64.b64decode(b64_data)
+                                            
+                                            with open(img_path, 'wb') as img_f:
+                                                img_f.write(data)
+                                                
+                                            # Ссылка в файле
+                                            # Так как файл и картинка в одной папке, путь просто имя файла
+                                            if is_py:
+                                                f.write(f"\n# ![Cell {i} Output {out_idx}]({img_filename})\n")
+                                            else:
+                                                f.write(f"\n![Cell {i} Output {out_idx}]({img_filename})\n")
+                                            
+            print(f"Exported notebook to '{export_file_path}'")
+            if has_images:
+                print(f"All files saved in folder: {target_dir}")
+                
+        except Exception as e:
+            print(f"Error exporting notebook: {e}")
+            sys.exit(1)
+                
+        except Exception as e:
+            print(f"Error exporting notebook: {e}")
+            sys.exit(1)
+
 
 def main():
     """
@@ -918,6 +1058,12 @@ def main():
     parser_validate = subparsers.add_parser("validate", help="Validate notebook structure")
     add_nb_arg(parser_validate)
 
+    # EXPORT
+    parser_export = subparsers.add_parser("export", help="Export full notebook to Markdown with images")
+    add_nb_arg(parser_export)
+    parser_export.add_argument("output", help="Output Markdown file path (e.g. export.md)")
+    parser_export.add_argument("--image-dir", help="Custom directory name for images")
+
     args = parser.parse_args()
 
     if not args.command:
@@ -1001,6 +1147,9 @@ def main():
     elif args.command == "validate":
         if not editor.validate():
             sys.exit(1)
+
+    elif args.command == "export":
+        editor.export_full(args.output, args.image_dir)
 
 
 if __name__ == "__main__":

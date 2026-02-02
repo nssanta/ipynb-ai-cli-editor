@@ -323,7 +323,31 @@ python3 notebook_editor.py save-output <notebook.ipynb> <индекс> --to-file
 
 ---
 
-## 📋 Сводная таблица команд
+### 14. **export** - Экспорт в Markdown или Python
+322: 
+323: Экспортирует весь ноутбук в один Markdown (`.md`) или Python (`.py`) файл, включая вывод ячеек и изображения.
+324: 
+325: - Для `.py`: Markdown-ячейки и выводы сохраняются как `#` комментарии.
+326: - Для `.md`: Markdown-ячейки и выводы сохраняются как `<!-- -->` комментарии.
+327: - **Картинки**: Автоматически извлекаются и сохраняются в папку. Если папка уже существует, добавляется суффикс `_copyN`.
+328: 
+329: ```bash
+330: python3 notebook_editor.py export <notebook.ipynb> <output.md|.py> [--image-dir <папка>]
+331: ```
+332: 
+333: **Примеры:**
+334: 
+335: ```bash
+336: # Экспорт в python (готов к запуску, с комментариями)
+337: python3 notebook_editor.py export analysis.ipynb script.py
+338: 
+339: # Экспорт в markdown
+340: python3 notebook_editor.py export analysis.ipynb report.md
+341: ```
+338: 
+339: ---
+340: 
+341: ## 📋 Сводная таблица команд
 
 | Команда | Описание | Ключевые флаги |
 |---------|----------|----------------|
@@ -340,6 +364,7 @@ python3 notebook_editor.py save-output <notebook.ipynb> <индекс> --to-file
 | `validate` | Проверка структуры | - |
 | `create` | Новый ноутбук | - |
 | `save-output` | Извлечение картинок | `--output-index`, `--to-file` |
+| `export` | Экспорт в Markdown | `--image-dir` |
 
 ---
 
